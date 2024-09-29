@@ -1,0 +1,49 @@
+---
+title: "p8105_hw2_cyl2159"
+author: "Chhiring Lama"
+date: "2024-09-29"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+```
+
+## *Problem 1*
+
+Importing and cleaning the dataset:
+```{r import_data, message = FALSE}
+nyc_transit_df <- read_csv("data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv", na = c("NA", "", "")) 
+
+nyc_transit_clean_df <- nyc_transit_df |> 
+  janitor::clean_names() |> 
+  select(line:entry, vending, ada, ada_notes) |> 
+  mutate(
+    entry = case_match(entry,
+                       "YES" ~ TRUE,
+                       "NO" ~ FALSE), 
+    vending = case_match(vending, 
+                         "YES" ~ TRUE, 
+                         "NO" ~ FALSE)) |> 
+  mutate_at(c(5:15), as.character) |> 
+  pivot_longer(
+    route1:route11, 
+    names_to = "route_number",
+    values_to = "subway_line", 
+    names_prefix = "route"
+  ) |> 
+  drop_na(subway_line)
+```
+
+The NYC transit dataset initially had `r ncol(nyc_transit_df)` columns and `r nrow(nyc_transit_df)` rows. Because we wanted a cleaner data, I recognized there the routes had empty cells, so I replaced the values with `NA`, and introduced snake-case column names. I used `case_match` within `mutate` to convert "YES" and "NO" values to logical variables. Similarly, I cleaned the dataset further by gathering the columns between `route1` and `route11` with `pivot_longer` into two columns `route_number` and `subway_line`. This step introduced columns with NA values for `subway_line` which are redundant rows, so I dropped the rows with missing data for `subway_line`. The resulting dataset has `r ncol(nyc_transit_clean_df)` columns containing the following variables: ``r names(nyc_transit_clean_df)[1:10]`` and ``r names(nyc_transit_clean_df)[11]``. There are `r nrow(nyc_transit_clean_df)` observations/rows. I believe that the data are tidy after these data wrangling steps. 
+
+1) How many distinct stations are there? Note that stations are identified both by name and by line (e.g. 125th St 8th Avenue; 125st Broadway; 125st Lenox); the distinct function may be useful here. \
+
+2) How many stations are ADA compliant?
+
+3) What proportion of station entrances / exits without vending allow entrance? \
+
+
+Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
