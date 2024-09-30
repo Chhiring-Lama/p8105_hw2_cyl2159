@@ -33,17 +33,70 @@ nyc_transit_clean_df <- nyc_transit_df |>
     values_to = "subway_line", 
     names_prefix = "route"
   ) |> 
-  drop_na(subway_line)
+  drop_na(subway_line) 
 ```
 
 The NYC transit dataset initially had `r ncol(nyc_transit_df)` columns and `r nrow(nyc_transit_df)` rows. Because we wanted a cleaner data, I recognized there the routes had empty cells, so I replaced the values with `NA`, and introduced snake-case column names. I used `case_match` within `mutate` to convert "YES" and "NO" values to logical variables. Similarly, I cleaned the dataset further by gathering the columns between `route1` and `route11` with `pivot_longer` into two columns `route_number` and `subway_line`. This step introduced columns with NA values for `subway_line` which are redundant rows, so I dropped the rows with missing data for `subway_line`. The resulting dataset has `r ncol(nyc_transit_clean_df)` columns containing the following variables: ``r names(nyc_transit_clean_df)[1:10]`` and ``r names(nyc_transit_clean_df)[11]``. There are `r nrow(nyc_transit_clean_df)` observations/rows. I believe that the data are tidy after these data wrangling steps. 
 
-1) How many distinct stations are there? Note that stations are identified both by name and by line (e.g. 125th St 8th Avenue; 125st Broadway; 125st Lenox); the distinct function may be useful here. \
+1) How many distinct stations are there? Note that stations are identified both by name and by line (e.g. 125th St 8th Avenue; 125st Broadway; 125st Lenox); the distinct function may be useful here. 
+```{r}
+nyc_transit_clean_df <- nyc_transit_clean_df |> 
+  mutate(station = paste(line, station_name, sep = ":")) 
 
-2) How many stations are ADA compliant?
+number_of_stations <- nyc_transit_clean_df |> 
+  select(station) |> 
+  unique() |> 
+  nrow()
+```
+- There are a total of `r number_of_stations` distinct stations in NYC. 
+
+2) How many stations are ADA compliant? 
+```{r}
+ada_compliance <- nyc_transit_clean_df |> 
+  select(station, ada) |> 
+  filter(ada == TRUE) |> 
+  unique() |> 
+  nrow()
+```
+- `r ada_compliance` stations are ADA compliant. 
 
 3) What proportion of station entrances / exits without vending allow entrance? \
-
+We can use the wide dataset here since there each row is a distinct entrance/exit whereas in the tidy dataset (`nyc_transit_clean_df`) a single entrance is represented in multiple rows and each row there represents a single subway line served by a particular entrance of a station. 
+```{r}
+vending_system <- nyc_transit_df |> 
+  janitor::clean_names() |> 
+  mutate(station = paste(line, station_name, sep = ":")) |> 
+  filter(vending == "NO") |> 
+  mutate(total_no_entrance = n()) |> 
+  filter(entry == "YES") |>
+  select(entry, total_no_entrance) |> 
+  mutate(entry_prop = n()/total_no_entrance) |> 
+  unique() 
+  
+entry_prop <- round(pull(vending_system, entry_prop), digits = 2)
+```
+- The proportion of station entrances/exits without vending that allow entrance is `r entry_prop` as calculated by the column `entry_prop`. \
 
 Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? Of the stations that serve the A train, how many are ADA compliant?
+
+The route numbers and route name are also distinct variables in the tidy dataset `nyc_transit_clean_df` as columns `route_number` and `subway_line`. 
+
+Subsetting the stations that serve A train:
+```{r}
+a_train_stations <- nyc_transit_clean_df |> 
+  mutate(station = paste(line, station_name, sep = ":")) |> 
+  filter(subway_line == "A") |> 
+  select(station, ada) |> 
+  unique()
+
+nrow_a_train_stations <- a_train_stations |> 
+  nrow()
+
+ada_complian_a_stations <- a_train_stations |> 
+  filter(ada == TRUE) |> 
+  nrow()
+```
+
+- There are `r nrow_a_train_stations` stations serving the A train. Out of them, `r ada_complian_a_stations` are ADA compliant. 
+
 
