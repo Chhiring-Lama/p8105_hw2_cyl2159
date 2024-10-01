@@ -8,6 +8,7 @@ output: github_document
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(dplyr)
+library(readxl)
 ```
 
 ## *Problem 1*
@@ -99,4 +100,72 @@ ada_complian_a_stations <- a_train_stations |>
 
 - There are `r nrow_a_train_stations` stations serving the A train. Out of them, `r ada_complian_a_stations` are ADA compliant. 
 
+## *Problem 2*
+
+Importing the Mr. Trash Wheel dataset:
+```{r}
+mr_trash_wheel_df <- read_excel("./data/202309 Trash Wheel Collection Data.xlsx", 
+                             sheet = "Mr. Trash Wheel", range = "A2:N586", 
+                             na = c("NA", "", "")) |> 
+  janitor::clean_names() |>
+  mutate(sports_balls = as.integer(round(sports_balls, digits = 0)), 
+         group = "mr_trash_wheel", 
+         year = as.numeric(year))
+```
+
+Importing the Professor Trash Wheel dataset and omit rows with any missing data for a dumpster:
+```{r}
+prof_trash_wheel_df <- read_excel("./data/202309 Trash Wheel Collection Data.xlsx", 
+                             sheet = "Professor Trash Wheel", range = "A2:M108",
+                             na = c("NA", "", "")) |> 
+  janitor::clean_names() |> 
+  mutate(group = "prof_trash_wheel")
+
+total_trash_by_prof <- prof_trash_wheel_df |> 
+  select(weight_tons) |> 
+  sum()
+```
+
+Importing the Gwynnda dataset and omit rows with any missing data for a dumpster:
+```{r}
+gwynnda_trash_wheel_df <- read_excel("./data/202309 Trash Wheel Collection Data.xlsx", 
+                             sheet = "Gwynnda Trash Wheel", range = "A2:L157",
+                             na = c("NA", "", "")) |> 
+  janitor::clean_names() |> 
+  mutate(group = "gwynnda_trash_wheel")
+total_cigratte_by_gwynnda <- gwynnda_trash_wheel_df |> 
+  filter(month == "June", year == "2022") |> 
+  select(cigarette_butts) |> 
+  sum() |> 
+  as.integer()
+```
+
+Joining the datasets:
+```{r}
+common_cols_between_mr_prof <- intersect(colnames(mr_trash_wheel_df), 
+                                         colnames(prof_trash_wheel_df))
+common_cols_between_mr_gwynnda <- intersect(colnames(mr_trash_wheel_df), 
+                                     colnames(gwynnda_trash_wheel_df))
+
+unique_cols_between_mr_prof <- setdiff(colnames(mr_trash_wheel_df), 
+                                         colnames(prof_trash_wheel_df))
+unique_cols_between_mr_gwynnda <- setdiff(colnames(mr_trash_wheel_df), 
+                                     colnames(gwynnda_trash_wheel_df))
+
+combined_trash_wheel_df <- mr_trash_wheel_df |> 
+  full_join(prof_trash_wheel_df, by = common_cols_between_mr_prof) |> 
+  full_join(gwynnda_trash_wheel_df, by = common_cols_between_mr_gwynnda)
+
+unique_trash <- combined_trash_wheel_df |> 
+  select(plastic_bottles:sports_balls) 
+
+combined_trash_wheel_clean_df <- combined_trash_wheel_df |> 
+  pivot_longer(
+    plastic_bottles:sports_balls, 
+    names_to = "waste_type", 
+    values_to = "number_of_waste_collected"
+  )
+
+```
+Among the three sheets that we used from the `Mr. Trash Wheel` workbook, the dataset `Mr. Trash Wheel` had the most variables recorded (`r ncol(mr_trash_wheel_df)`), while the datasets `Professor Trash Wheel` and `Gwynnda Trash Wheel` had `r ncol(prof_trash_wheel_df)` and `r ncol(gwynnda_trash_wheel_df)` variables respectively. After combining the three datasets, there are information about `r nrow(combined_trash_wheel_df)` dumpsters, and a total of `r nrow(combined_trash_wheel_clean_df)` observations after tidying the data. For each groups, there are data on volume and weight of trash collected, number and types of each trash collected. There are `r ncol(unique_trash)` types of trash and they are: ``r names(unique_trash)``. We are missing data for ``r unique_cols_between_mr_prof`` in observations from `Professor Trash Wheel`, and ``r unique_cols_between_mr_gwynnda`` from `Gwynnda Trash Wheel`. For the available data, Professor Trash Wheel collected `r total_trash_by_prof` tons trash. Similarly, Gwynnda collected `r total_cigratte_by_gwynnda` cigarette butts in June of 2022. 
 
