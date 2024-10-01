@@ -106,7 +106,7 @@ ada_complian_a_stations <- a_train_stations |>
 Importing the Mr. Trash Wheel dataset:
 ```{r}
 mr_trash_wheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
-                             sheet = "Mr. Trash Wheel", range = "A2:N586", 
+                             sheet = "Mr. Trash Wheel", range = "A2:N653", 
                              na = c("NA", "", "")) |> 
   janitor::clean_names() |>
   mutate(sports_balls = as.integer(round(sports_balls, digits = 0)), 
@@ -117,7 +117,7 @@ mr_trash_wheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx"
 Importing the Professor Trash Wheel dataset and omit rows with any missing data for a dumpster:
 ```{r}
 prof_trash_wheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
-                             sheet = "Professor Trash Wheel", range = "A2:M108",
+                             sheet = "Professor Trash Wheel", range = "A2:M120",
                              na = c("NA", "", "")) |> 
   janitor::clean_names() |> 
   mutate(group = "prof_trash_wheel")
@@ -130,7 +130,7 @@ total_trash_by_prof <- prof_trash_wheel_df |>
 Importing the Gwynnda dataset and omit rows with any missing data for a dumpster:
 ```{r}
 gwynnda_trash_wheel_df <- read_excel("./data/202409 Trash Wheel Collection Data.xlsx", 
-                             sheet = "Gwynnda Trash Wheel", range = "A2:L157",
+                             sheet = "Gwynnda Trash Wheel", range = "A2:L265",
                              na = c("NA", "", "")) |> 
   janitor::clean_names() |> 
   mutate(group = "gwynnda_trash_wheel")
